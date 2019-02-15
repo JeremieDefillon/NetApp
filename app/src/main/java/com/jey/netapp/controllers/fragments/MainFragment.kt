@@ -1,24 +1,28 @@
 package com.jey.netapp.controllers.fragments
 
+import android.content.Context
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import com.bumptech.glide.Glide
+import com.jey.netapp.MyApplication
 import com.jey.netapp.R
 import com.jey.netapp.models.GithubUser
-import com.jey.netapp.utils.GithubStreams
+import com.jey.netapp.network.interfaces.GithubService
 import com.jey.netapp.utils.ItemClickSupport
 import com.jey.netapp.views.GithubUserAdapter
 import io.reactivex.disposables.Disposable
 import io.reactivex.observers.DisposableObserver
 import kotlinx.android.synthetic.main.fragment_main.*
 import java.util.*
+import javax.inject.Inject
 
 class MainFragment : Fragment(), GithubUserAdapter.Listener {
 
@@ -30,8 +34,16 @@ class MainFragment : Fragment(), GithubUserAdapter.Listener {
     private var githubUsers: MutableList<GithubUser>? = null
     private var adapter: GithubUserAdapter? = null
 
+    var mGithubService: GithubService? = null
+        @Inject set
+
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater!!.inflate(R.layout.fragment_main, container, false)
+    }
+
+    override fun onAttach(context: Context?) {
+        (context!!.applicationContext as MyApplication).gitHubComponent.inject(this)
+        super.onAttach(context)
     }
 
     override fun onViewCreated(view: View?, savedInstanceState: Bundle?) {
@@ -93,14 +105,18 @@ class MainFragment : Fragment(), GithubUserAdapter.Listener {
     // -------------------
 
     private fun executeHttpRequestWithRetrofit() {
-        this.disposable = GithubStreams.streamFetchUserFollowing("JakeWharton").subscribeWith(object : DisposableObserver<List<GithubUser>>() {
+        this.disposable = mGithubService!!.getFollowing("JakeWharton").subscribeWith(object : DisposableObserver<List<GithubUser>>() {
             override fun onNext(users: List<GithubUser>) {
                 updateUI(users)
             }
 
-            override fun onError(e: Throwable) {}
+            override fun onError(e: Throwable) {
+                Log.e("ERROR", e.toString())
+            }
 
-            override fun onComplete() {}
+            override fun onComplete() {
+                Log.d("ON", "COMPLETE")
+            }
         })
     }
 
@@ -113,6 +129,7 @@ class MainFragment : Fragment(), GithubUserAdapter.Listener {
     // -------------------
 
     private fun updateUI(users: List<GithubUser>) {
+        Log.d("USERS", users.toString())
         githubUsers!!.clear()
         githubUsers!!.addAll(users)
         adapter!!.notifyDataSetChanged()
