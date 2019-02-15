@@ -14,7 +14,7 @@ In this example we use "JakeWharton" Profile to get list.
 
 UPDATED :
 Use of Dagger2 for
- # Retrofit
- # Gson
- # OkHttpClient
- # SharedPreferences
+ - Retrofit
+ - Gson
+ - OkHttpClient
+ - SharedPreferences
